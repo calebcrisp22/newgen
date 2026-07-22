@@ -4,6 +4,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
+  EmbedBuilder,
 } from "discord.js";
 import {
   popAccount,
@@ -68,8 +69,12 @@ export async function execute(interaction) {
     });
   }
 
+  const thinkingEmbed = new EmbedBuilder()
+    .setColor(0x1a1a2e)
+    .setDescription(`🔄 **Generator is thinking...** <@${userId}> is generating a **${tier}** account.`);
+
   const thinkingMsg = await interaction.channel.send({
-    content: "🔄 Generator is thinking...",
+    embeds: [thinkingEmbed],
   });
 
   const account = popAccount(tier);
@@ -88,9 +93,10 @@ export async function execute(interaction) {
   const bannerImageUrl = getBannerImageUrl(guildId);
 
   // Dramatic countdown before handing over the account
-  await thinkingMsg
-    .edit({ content: "🔄 Adding account to API (10s...)" })
-    .catch(() => {});
+  const processingEmbed = new EmbedBuilder()
+    .setColor(0x1a1a2e)
+    .setDescription(`🔄 **Adding account to API...** (10s)`);
+  await thinkingMsg.edit({ embeds: [processingEmbed] }).catch(() => {});
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // Build DM embed + buttons
@@ -156,25 +162,27 @@ export async function execute(interaction) {
     });
   }
 
-  // Remove the public "thinking" message now that everything succeeded
-  await thinkingMsg.delete().catch(() => {});
+  // Turn the public "thinking" message into the final clean public embed —
+  // minimal info only: who generated a what-tier account. Detailed info stays DM-only.
+  const publicEmbed = buildPublicGenEmbed(
+    userId,
+    tier,
+    "DOKKAEBI",
+    bannerImageUrl
+  );
+  await thinkingMsg.edit({ embeds: [publicEmbed] }).catch(() => {});
 
   await interaction.reply({
-    content: `✅ **Account Generated!** <@${userId}> just generated a **${tier}** account.`,
+    content: `✅ **Account Generated!** Check your DMs for the account details.`,
     flags: MessageFlags.Ephemeral,
   });
 
-  // Post public log embed to gen channel
+  // Optionally, also post the same public embed to a dedicated log channel
   const logChannelId = settings.gen_channel_id;
   if (logChannelId) {
     try {
       const logChannel = await interaction.guild.channels.fetch(logChannelId);
-      if (logChannel) {
-        const publicEmbed = buildPublicGenEmbed(
-          userId,
-          "DOKKAEBI",
-          bannerImageUrl
-        );
+      if (logChannel && logChannel.id !== interaction.channelId) {
         await logChannel.send({ embeds: [publicEmbed] });
       }
     } catch {

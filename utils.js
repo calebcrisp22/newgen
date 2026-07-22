@@ -5,12 +5,13 @@ import { EmbedBuilder } from "discord.js";
 const DEFAULT_BANNER_IMAGE_URL =
   "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg";
 
-export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI", imageUrl = null) {
+export function buildPublicGenEmbed(userId, tier = "free", operatorName = "DOKKAEBI", imageUrl = null) {
+  // Minimal public embed — no account details, just who generated what tier of account.
   const embed = new EmbedBuilder()
     .setColor(0x1a1a2e)
     .setTitle("<:r6:> Account Generated")
-    .setDescription(`<@${username}> generated an account!`)
-    .setImage(imageUrl || DEFAULT_BANNER_IMAGE_URL)
+    .setDescription(`<@${userId}> generated a **${tier}** account!`)
+    .setThumbnail(imageUrl || DEFAULT_BANNER_IMAGE_URL)
     .setFooter({ text: `${operatorName}⭐` })
     .setTimestamp();
 
@@ -41,11 +42,11 @@ export function buildAccountDMEmbed(account, imageUrl = null) {
     .setThumbnail(imageUrl || DEFAULT_BANNER_IMAGE_URL);
 
   if (account.username)
-    embed.addFields({ name: "Username ➡️", value: account.username, inline: true });
+    embed.addFields({ name: "👤 Username", value: account.username, inline: true });
   if (account.level)
-    embed.addFields({ name: "Level ➡️", value: `${account.level}`, inline: true });
+    embed.addFields({ name: "🎖️ Level", value: `${account.level}`, inline: true });
   if (account.linked_platforms)
-    embed.addFields({ name: "Linked Platforms ➡️", value: platforms, inline: true });
+    embed.addFields({ name: "🖥️ Platforms", value: platforms, inline: true });
 
   if (account.renown || account.r6credits) {
     const currency = [
@@ -54,7 +55,7 @@ export function buildAccountDMEmbed(account, imageUrl = null) {
     ]
       .filter(Boolean)
       .join("  ");
-    embed.addFields({ name: "Currency ➡️", value: currency });
+    embed.addFields({ name: "💰 Currency", value: currency });
   }
 
   // Inventory section
@@ -71,11 +72,11 @@ export function buildAccountDMEmbed(account, imageUrl = null) {
     );
 
   if (invLines.length > 0) {
-    embed.addFields({ name: "🎮 Inventory:", value: invLines.join("\n") });
+    embed.addFields({ name: "📦 Inventory", value: invLines.join("\n") });
   }
 
   embed.addFields({
-    name: "Login Credentials:",
+    name: "🔑 Login Credentials",
     value: `\`\`\`${account.credentials}\`\`\``,
   });
 
