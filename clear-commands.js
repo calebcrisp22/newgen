@@ -67,4 +67,10 @@ try {
   console.log("\n✅ All commands cleared. Run 'npm run deploy' to re-register.");
 } catch (err) {
   console.error("❌ Failed to clear commands:", err);
+  console.error(
+    "⚠️  Continuing anyway — clearing commands failed, but this should not block bot startup."
+  );
+  // Intentionally do NOT exit with a failure code. Command clearing failing
+  // (e.g. Discord outage or rate limiting) should never prevent the bot from
+  // starting up.
 }
