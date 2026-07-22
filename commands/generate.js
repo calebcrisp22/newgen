@@ -68,7 +68,7 @@ export async function execute(interaction) {
     });
   }
 
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const thinkingMsg = await interaction.channel.send({
     content: "🔄 Generator is thinking...",
