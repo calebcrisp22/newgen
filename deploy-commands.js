@@ -56,14 +56,47 @@ try {
   let data;
 
   if (GUILD_ID) {
-    // Guild commands update instantly — great for testing
-    console.log(`➡️  Calling rest.put(applicationGuildCommands) for guild ${GUILD_ID}...`);
-    data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-      body: commands,
-    });
-    console.log(`⬅️  rest.put(applicationGuildCommands) resolved.`);
-    console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
-    console.log(`✅ Registered ${data.length} command(s) to guild ${GUILD_ID}`);
+    // Guild commands update instantly — great for testing.
+    // Register commands one at a time (instead of a single bulk PUT) to avoid
+    // sending a large request body, which appears to be rate-limited/blocked
+    // when coming from Railway's IP.
+    console.log(
+      `➡️  Registering ${commands.length} command(s) individually to guild ${GUILD_ID}...`
+    );
+
+    const registered = [];
+    const failed = [];
+
+    for (let i = 0; i < commands.length; i++) {
+      const command = commands[i];
+      const progress = `[${i + 1}/${commands.length}]`;
+
+      try {
+        console.log(`➡️  ${progress} Registering /${command.name}...`);
+        const result = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+          body: [command],
+        });
+        console.log(`✅ ${progress} Registered /${command.name}`);
+        registered.push(...result);
+      } catch (cmdErr) {
+        console.error(`❌ ${progress} Failed to register /${command.name}:`, cmdErr.message);
+        failed.push(command.name);
+      }
+
+      // Small delay between requests to avoid overwhelming the API
+      if (i < commands.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    }
+
+    data = registered;
+
+    console.log(
+      `✅ Registered ${registered.length}/${commands.length} command(s) to guild ${GUILD_ID}`
+    );
+    if (failed.length > 0) {
+      console.error(`⚠️  Failed to register ${failed.length} command(s): ${failed.join(", ")}`);
+    }
   } else {
     // Global commands take up to 1 hour to propagate
     console.log(`➡️  Calling rest.put(applicationCommands)...`);
