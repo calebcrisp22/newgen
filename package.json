@@ -2,11 +2,11 @@
   "name": "r6-account-generator-bot",
   "version": "1.0.0",
   "description": "Rainbow Six Siege account generator Discord bot",
-  "main": "src/index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "deploy": "node src/deploy-commands.js"
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
