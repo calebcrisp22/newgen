@@ -13,11 +13,13 @@ if (!DISCORD_BOT_TOKEN || !CLIENT_ID) {
   process.exit(1);
 }
 
-// Set a global timeout - if deployment takes longer than 90 seconds, something is wrong
+// Set a global timeout - if deployment takes longer than 90 seconds, something is wrong.
+// We don't exit the process here — command registration failing should never block
+// the bot from starting up. Commands can be registered later with 'npm run deploy'.
 const deploymentTimeout = setTimeout(() => {
   console.error("\n❌ Command deployment timed out after 90 seconds. Discord API is not responding.");
   console.error("This usually happens when Discord is rate-limiting or has connectivity issues.");
-  process.exit(1);
+  console.error("⚠️  Continuing without slash commands registered. Run 'npm run deploy' manually once Discord is reachable.");
 }, 90000);
 
 const commands = [];
@@ -170,5 +172,12 @@ try {
     console.error("❌ Failed to register commands:", err.message);
     console.error("🔎 Full error object:", err);
   }
-  process.exit(1);
+
+  clearTimeout(deploymentTimeout);
+  console.error(
+    "⚠️  Command deployment failed, but continuing startup anyway — the bot will still run, just without updated slash commands until 'npm run deploy' succeeds."
+  );
+  // Intentionally do NOT exit with a failure code here. A Discord outage or
+  // rate limit should not take the entire bot offline — slash commands can be
+  // registered at any time, even after the bot has started.
 }

@@ -127,4 +127,11 @@ if (!process.env.DISCORD_BOT_TOKEN) {
   process.exit(1);
 }
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+try {
+  await client.login(process.env.DISCORD_BOT_TOKEN);
+} catch (err) {
+  console.error("❌ Failed to log in to Discord:", err.message);
+  console.error(
+    "⚠️  Discord may be unreachable right now. discord.js will keep retrying the connection in the background; the process will stay alive."
+  );
+}
