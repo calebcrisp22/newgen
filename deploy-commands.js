@@ -33,19 +33,35 @@ try {
   console.log(`\n🔄 Registering ${commands.length} slash command(s)...`);
 
   let data;
-  if (GUILD_ID) {
-    // Guild commands update instantly — great for testing
-    data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-      body: commands,
-    });
-    console.log(`✅ Registered ${data.length} command(s) to guild ${GUILD_ID}`);
-  } else {
-    // Global commands take up to 1 hour to propagate
-    data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
-      body: commands,
-    });
-    console.log(`✅ Registered ${data.length} global command(s)`);
+
+  // Set a 30 second timeout for the registration
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    if (GUILD_ID) {
+      // Guild commands update instantly — great for testing
+      data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+        body: commands,
+        signal: controller.signal,
+      });
+      console.log(`✅ Registered ${data.length} command(s) to guild ${GUILD_ID}`);
+    } else {
+      // Global commands take up to 1 hour to propagate
+      data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
+        body: commands,
+        signal: controller.signal,
+      });
+      console.log(`✅ Registered ${data.length} global command(s)`);
+    }
+  } finally {
+    clearTimeout(timeout);
   }
 } catch (err) {
-  console.error("❌ Failed to register commands:", err);
+  if (err.name === "AbortError") {
+    console.error("❌ Command registration timed out (30s). Discord API may be slow.");
+  } else {
+    console.error("❌ Failed to register commands:", err.message);
+  }
+  process.exit(1);
 }
