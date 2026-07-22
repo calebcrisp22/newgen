@@ -13,6 +13,13 @@ if (!DISCORD_BOT_TOKEN || !CLIENT_ID) {
   process.exit(1);
 }
 
+// Set a global timeout - if deployment takes longer than 45 seconds, something is wrong
+const deploymentTimeout = setTimeout(() => {
+  console.error("\n❌ Command deployment timed out after 45 seconds. Discord API is not responding.");
+  console.error("This usually happens when Discord is rate-limiting or has connectivity issues.");
+  process.exit(1);
+}, 45000);
+
 const commands = [];
 
 const commandsPath = join(__dirname, "commands");
@@ -47,6 +54,8 @@ try {
     });
     console.log(`✅ Registered ${data.length} global command(s)`);
   }
+
+  clearTimeout(deploymentTimeout);
 } catch (err) {
   if (err.message?.includes("timeout") || err.code === "ETIMEDOUT") {
     console.error("❌ Command registration timed out. Discord API may be overwhelmed.");
