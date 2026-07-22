@@ -4,7 +4,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
-  EmbedBuilder,
 } from "discord.js";
 import {
   popAccount,
@@ -28,10 +27,11 @@ export const data = new SlashCommandBuilder()
         { name: "Free", value: "free" },
         { name: "Premium", value: "premium" }
       )
+      .setRequired(true)
   );
 
 export async function execute(interaction) {
-  const tier = interaction.options.getString("category") ?? "free";
+  const tier = interaction.options.getString("category");
   const userId = interaction.user.id;
   const guildId = interaction.guildId;
   const settings = getSettings(guildId);
@@ -72,18 +72,11 @@ export async function execute(interaction) {
   // Acknowledge the interaction silently — no visible response to the user.
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  // Public "thinking" message, visible to everyone in the generate channel.
-  const thinkingEmbed = new EmbedBuilder()
-    .setColor(0x1a1a2e)
-    .setDescription(`🔄 **Generator is thinking...** <@${userId}> is generating a **${tier}** account.`);
-
-  const thinkingMsg = await interaction.channel.send({
-    embeds: [thinkingEmbed],
-  });
+  // Show Discord's native typing indicator instead of a public embed.
+  await interaction.channel.sendTyping();
 
   const account = popAccount(tier);
   if (!account) {
-    await thinkingMsg.delete().catch(() => {});
     return interaction.editReply({
       content: "❌ Stock ran out while processing. Try again!",
     });
@@ -152,15 +145,11 @@ export async function execute(interaction) {
     });
   } catch (err) {
     console.error("Full DM error:", err.message, err.code, err);
-    await thinkingMsg.delete().catch(() => {});
     return interaction.editReply({
       content:
         "❌ I couldn't DM you! Please enable DMs from server members in your privacy settings.",
     });
   }
-
-  // Remove the public "thinking" message now that the DM succeeded.
-  await thinkingMsg.delete().catch(() => {});
 
   // Build the final clean public embed — minimal info only: who generated a
   // what-tier account. Detailed info stays DM-only.
