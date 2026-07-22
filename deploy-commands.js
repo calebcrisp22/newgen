@@ -55,35 +55,24 @@ try {
 
   let data;
 
-  // Explicit 10 second timeout on the REST.put() call itself, so a hanging
-  // network request is caught long before the 45 second global timeout fires.
-  const controller = new AbortController();
-  const putTimeout = setTimeout(() => controller.abort(), 10000);
-
-  try {
-    if (GUILD_ID) {
-      // Guild commands update instantly — great for testing
-      console.log(`➡️  Calling rest.put(applicationGuildCommands) for guild ${GUILD_ID}...`);
-      data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-        body: commands,
-        signal: controller.signal,
-      });
-      console.log(`⬅️  rest.put(applicationGuildCommands) resolved.`);
-      console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
-      console.log(`✅ Registered ${data.length} command(s) to guild ${GUILD_ID}`);
-    } else {
-      // Global commands take up to 1 hour to propagate
-      console.log(`➡️  Calling rest.put(applicationCommands)...`);
-      data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
-        body: commands,
-        signal: controller.signal,
-      });
-      console.log(`⬅️  rest.put(applicationCommands) resolved.`);
-      console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
-      console.log(`✅ Registered ${data.length} global command(s)`);
-    }
-  } finally {
-    clearTimeout(putTimeout);
+  if (GUILD_ID) {
+    // Guild commands update instantly — great for testing
+    console.log(`➡️  Calling rest.put(applicationGuildCommands) for guild ${GUILD_ID}...`);
+    data = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
+      body: commands,
+    });
+    console.log(`⬅️  rest.put(applicationGuildCommands) resolved.`);
+    console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
+    console.log(`✅ Registered ${data.length} command(s) to guild ${GUILD_ID}`);
+  } else {
+    // Global commands take up to 1 hour to propagate
+    console.log(`➡️  Calling rest.put(applicationCommands)...`);
+    data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
+      body: commands,
+    });
+    console.log(`⬅️  rest.put(applicationCommands) resolved.`);
+    console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
+    console.log(`✅ Registered ${data.length} global command(s)`);
   }
 
   clearTimeout(deploymentTimeout);
