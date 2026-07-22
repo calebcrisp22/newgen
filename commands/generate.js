@@ -107,11 +107,15 @@ export async function execute(interaction) {
   );
 
   // DM the user
-  let tempMsg;
+  let tempMsg = null;
   try {
     const dm = await interaction.user.createDM();
 
-    tempMsg = await dm.send({ content: "🔄 Adding account to API" });
+    try {
+      tempMsg = await dm.send({ content: "🔄 Adding account to API" });
+    } catch (e) {
+      // temp message failed — continue anyway
+    }
 
     const dmMsg = await dm.send({ embeds: [dmEmbed], components: [row] });
 
@@ -125,7 +129,13 @@ export async function execute(interaction) {
         });
       }
     });
-  } catch {
+
+    // Non-critical cleanup — wait a bit then remove the temp "Adding account" message
+    if (tempMsg) {
+      setTimeout(() => tempMsg.delete().catch(() => {}), 10_000);
+    }
+  } catch (err) {
+    console.error("Error in /generate DM sending:", err);
     await thinkingMsg.delete().catch(() => {});
     return interaction.reply({
       content:
@@ -133,10 +143,6 @@ export async function execute(interaction) {
       flags: MessageFlags.Ephemeral,
     });
   }
-
-  // Non-critical cleanup — wait a bit then remove the temp "Adding account" message
-  await new Promise((resolve) => setTimeout(resolve, 10_000));
-  await tempMsg?.delete().catch(() => {});
 
   // Remove the public "thinking" message now that everything succeeded
   await thinkingMsg.delete().catch(() => {});
