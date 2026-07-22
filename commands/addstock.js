@@ -16,10 +16,17 @@ export const data = new SlashCommandBuilder()
     o
       .setName("tier")
       .setDescription("Which stock to add to")
+      .setRequired(true)
       .addChoices(
         { name: "Free", value: "free" },
         { name: "Premium", value: "premium" }
       )
+  )
+  .addAttachmentOption((o) =>
+    o
+      .setName("file")
+      .setDescription("File with accounts (one per line, email:pass or JSON)")
+      .setRequired(false)
   );
 
 export async function execute(interaction) {
@@ -30,7 +37,52 @@ export async function execute(interaction) {
     });
   }
 
-  const tier = interaction.options.getString("tier") ?? "free";
+  const tier = interaction.options.getString("tier");
+  const attachment = interaction.options.getAttachment("file");
+
+  if (attachment) {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    let raw;
+    try {
+      const res = await fetch(attachment.url);
+      raw = await res.text();
+    } catch (e) {
+      return interaction.editReply({
+        content: "❌ Failed to download the attached file.",
+      });
+    }
+
+    const lines = raw
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    let added = 0;
+    const failed = [];
+
+    for (const line of lines) {
+      const parsed = parseAccountInput(line);
+      if (!parsed) {
+        failed.push(line.slice(0, 40) + "…");
+        continue;
+      }
+      addAccount({ ...parsed, tier });
+      added++;
+    }
+
+    const after = getStockCount(tier);
+
+    let msg = `✅ Added **${added}** account(s) to **${tier}** stock. Total: **${after}**`;
+    if (failed.length > 0) {
+      msg += `\n\n❌ Failed to parse **${failed.length}** line(s):\n${failed
+        .slice(0, 5)
+        .map((f) => `• \`${f}\``)
+        .join("\n")}`;
+    }
+
+    return interaction.editReply({ content: msg });
+  }
 
   const modal = new ModalBuilder()
     .setCustomId(`addstock_modal_${tier}`)
