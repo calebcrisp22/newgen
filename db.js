@@ -1,9 +1,10 @@
 import Database from "better-sqlite3";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import process from "process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const db = new Database(join(__dirname, "../bot.db"));
+const db = new Database(join(process.env.DATA_DIR || "/data", "bot.db"));
 
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
