@@ -45,7 +45,8 @@ db.exec(`
     drop_channel_id TEXT,
     cooldown_seconds INTEGER NOT NULL DEFAULT 30,
     premium_cooldown_seconds INTEGER NOT NULL DEFAULT 60,
-    drop_cooldown_seconds INTEGER NOT NULL DEFAULT 0
+    drop_cooldown_seconds INTEGER NOT NULL DEFAULT 0,
+    banner_image_url TEXT
   );
 
   CREATE TABLE IF NOT EXISTS invites (
@@ -72,6 +73,14 @@ db.exec(`
     PRIMARY KEY (user_id, guild_id, command)
   );
 `);
+
+// ── Migrations ────────────────────────────────────────────────────────────────
+// Add banner_image_url column to settings table if it doesn't already exist
+// (for databases created before this column was introduced).
+const settingsColumns = db.prepare("PRAGMA table_info(settings)").all();
+if (!settingsColumns.some((col) => col.name === "banner_image_url")) {
+  db.exec("ALTER TABLE settings ADD COLUMN banner_image_url TEXT");
+}
 
 // ── Stock helpers ─────────────────────────────────────────────────────────────
 
@@ -177,6 +186,7 @@ export function getSettings(guildId) {
       cooldown_seconds: 30,
       premium_cooldown_seconds: 60,
       drop_cooldown_seconds: 0,
+      banner_image_url: null,
     }
   );
 }
@@ -189,6 +199,7 @@ export function setSetting(guildId, key, value) {
     "cooldown_seconds",
     "premium_cooldown_seconds",
     "drop_cooldown_seconds",
+    "banner_image_url",
   ];
   if (!allowed.includes(key)) throw new Error(`Unknown setting key: ${key}`);
 
@@ -196,6 +207,16 @@ export function setSetting(guildId, key, value) {
     INSERT INTO settings (guild_id, ${key}) VALUES (?, ?)
     ON CONFLICT(guild_id) DO UPDATE SET ${key} = excluded.${key}
   `).run(guildId, value);
+}
+
+// ── Banner Image helpers ──────────────────────────────────────────────────────
+
+export function getBannerImageUrl(guildId) {
+  return getSettings(guildId).banner_image_url ?? null;
+}
+
+export function setBannerImageUrl(guildId, url) {
+  setSetting(guildId, "banner_image_url", url);
 }
 
 // ── Cooldown helpers ──────────────────────────────────────────────────────────
