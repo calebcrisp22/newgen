@@ -68,7 +68,7 @@ export async function execute(interaction) {
     });
   }
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await interaction.deferReply();
 
   const thinkingMsg = await interaction.channel.send({
     content: "🔄 Generator is thinking...",
@@ -77,8 +77,10 @@ export async function execute(interaction) {
   const account = popAccount(tier);
   if (!account) {
     await thinkingMsg.delete().catch(() => {});
-    return interaction.editReply({
+    await interaction.deleteReply().catch(() => {});
+    return interaction.followUp({
       content: "❌ Stock ran out while processing. Try again!",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -133,14 +135,16 @@ export async function execute(interaction) {
       }
     });
   } catch {
-    return interaction.editReply({
+    await interaction.deleteReply().catch(() => {});
+    return interaction.followUp({
       content:
         "❌ I couldn't DM you! Please enable DMs from server members in your privacy settings.",
+      flags: MessageFlags.Ephemeral,
     });
   }
 
   await interaction.editReply({
-    content: "✅ **Account sent to your DMs!** Check your direct messages.",
+    content: `✅ **Account Generated!** <@${userId}> just generated a **${tier}** account.`,
   });
 
   // Post public log embed to gen channel
