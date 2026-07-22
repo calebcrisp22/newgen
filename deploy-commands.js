@@ -34,7 +34,24 @@ for (const file of commandFiles) {
   }
 }
 
+// Helper to race a promise against a fixed timeout so we can tell whether a
+// rest.put() call is hanging (never resolving/rejecting) vs. actually failing.
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`⏱️  Timed out after ${ms}ms waiting for: ${label}`));
+    }, ms);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+console.log("Token format:", DISCORD_BOT_TOKEN?.substring(0, 10) + "...");
+
+console.log("About to create REST client");
 const rest = new REST().setToken(DISCORD_BOT_TOKEN);
+console.log("REST client created successfully");
 
 // Validate CLIENT_ID and GUILD_ID before making any API calls
 if (!CLIENT_ID || CLIENT_ID === "undefined") {
@@ -55,6 +72,11 @@ try {
 
   let data;
 
+  console.log(
+    "📦 Commands queued for registration (names only):",
+    commands.map((c) => c.name)
+  );
+
   if (GUILD_ID) {
     // Guild commands update instantly — great for testing.
     // Register commands one at a time (instead of a single bulk PUT) to avoid
@@ -70,16 +92,26 @@ try {
     for (let i = 0; i < commands.length; i++) {
       const command = commands[i];
       const progress = `[${i + 1}/${commands.length}]`;
+      const guildUrl = Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID);
 
       try {
         console.log(`➡️  ${progress} Registering /${command.name}...`);
-        const result = await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
-          body: [command],
-        });
+        console.log("Command name being sent:", command.name);
+        console.log("About to call rest.put() for URL:", guildUrl);
+        console.log("Token format:", DISCORD_BOT_TOKEN?.substring(0, 10) + "...");
+        console.log("CLIENT_ID:", CLIENT_ID, "GUILD_ID:", GUILD_ID);
+
+        const result = await withTimeout(
+          rest.put(guildUrl, { body: [command] }),
+          5000,
+          `rest.put(${guildUrl}) for /${command.name}`
+        );
+
+        console.log(`⬅️  rest.put() resolved for /${command.name}`);
         console.log(`✅ ${progress} Registered /${command.name}`);
         registered.push(...result);
       } catch (cmdErr) {
-        console.error(`❌ ${progress} Failed to register /${command.name}:`, cmdErr.message);
+        console.error(`❌ ${progress} Failed/timed out registering /${command.name}:`, cmdErr.message);
         failed.push(command.name);
       }
 
@@ -99,13 +131,31 @@ try {
     }
   } else {
     // Global commands take up to 1 hour to propagate
-    console.log(`➡️  Calling rest.put(applicationCommands)...`);
-    data = await rest.put(Routes.applicationCommands(CLIENT_ID), {
-      body: commands,
-    });
-    console.log(`⬅️  rest.put(applicationCommands) resolved.`);
-    console.log("🔎 Raw response from Discord:", JSON.stringify(data, null, 2));
-    console.log(`✅ Registered ${data.length} global command(s)`);
+    const globalUrl = Routes.applicationCommands(CLIENT_ID);
+    console.log(
+      "📦 Command names being sent (global):",
+      commands.map((c) => c.name)
+    );
+    console.log("About to call rest.put() for URL:", globalUrl);
+    console.log("Token format:", DISCORD_BOT_TOKEN?.substring(0, 10) + "...");
+    console.log("CLIENT_ID:", CLIENT_ID, "GUILD_ID:", GUILD_ID || "(not set)");
+
+    try {
+      data = await withTimeout(
+        rest.put(globalUrl, { body: commands }),
+        5000,
+        `rest.put(${globalUrl})`
+      );
+      console.log(`⬅️  rest.put(applicationCommands) resolved.`);
+      console.log(
+        "🔎 Raw response from Discord (names only):",
+        data.map((c) => c.name)
+      );
+      console.log(`✅ Registered ${data.length} global command(s)`);
+    } catch (globalErr) {
+      console.error("❌ Failed/timed out registering global commands:", globalErr.message);
+      throw globalErr;
+    }
   }
 
   clearTimeout(deploymentTimeout);
