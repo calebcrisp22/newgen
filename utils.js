@@ -11,7 +11,7 @@ export function buildPublicGenEmbed(userId, tier = "free", operatorName = "DOKKA
     .setColor(0x1a1a2e)
     .setTitle("<:r6:> Account Generated")
     .setDescription(`<@${userId}> generated a **${tier}** account!`)
-    .setThumbnail(imageUrl || DEFAULT_BANNER_IMAGE_URL)
+    .setImage(imageUrl || DEFAULT_BANNER_IMAGE_URL)
     .setFooter({ text: `${operatorName}⭐` })
     .setTimestamp();
 
