@@ -68,8 +68,6 @@ export async function execute(interaction) {
     });
   }
 
-  await interaction.deferReply();
-
   const thinkingMsg = await interaction.channel.send({
     content: "🔄 Generator is thinking...",
   });
@@ -77,8 +75,7 @@ export async function execute(interaction) {
   const account = popAccount(tier);
   if (!account) {
     await thinkingMsg.delete().catch(() => {});
-    await interaction.deleteReply().catch(() => {});
-    return interaction.followUp({
+    return interaction.reply({
       content: "❌ Stock ran out while processing. Try again!",
       flags: MessageFlags.Ephemeral,
     });
@@ -86,9 +83,6 @@ export async function execute(interaction) {
 
   // Set cooldown
   setCooldown(userId, guildId, `generate_${tier}`, cooldownSecs);
-
-  // Remove the "thinking" message immediately — nothing else should be visible yet
-  await thinkingMsg.delete().catch(() => {});
 
   // Fetch custom banner image (falls back to default inside the embed builders)
   const bannerImageUrl = getBannerImageUrl(guildId);
@@ -132,8 +126,8 @@ export async function execute(interaction) {
       }
     });
   } catch {
-    await interaction.deleteReply().catch(() => {});
-    return interaction.followUp({
+    await thinkingMsg.delete().catch(() => {});
+    return interaction.reply({
       content:
         "❌ I couldn't DM you! Please enable DMs from server members in your privacy settings.",
       flags: MessageFlags.Ephemeral,
@@ -144,8 +138,12 @@ export async function execute(interaction) {
   await new Promise((resolve) => setTimeout(resolve, 10_000));
   await tempMsg?.delete().catch(() => {});
 
-  await interaction.editReply({
+  // Remove the public "thinking" message now that everything succeeded
+  await thinkingMsg.delete().catch(() => {});
+
+  await interaction.reply({
     content: `✅ **Account Generated!** <@${userId}> just generated a **${tier}** account.`,
+    flags: MessageFlags.Ephemeral,
   });
 
   // Post public log embed to gen channel
