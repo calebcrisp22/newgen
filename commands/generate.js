@@ -4,7 +4,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
-  EmbedBuilder,
 } from "discord.js";
 import {
   popAccount,
@@ -69,20 +68,14 @@ export async function execute(interaction) {
     });
   }
 
-  const thinkingEmbed = new EmbedBuilder()
-    .setColor(0x1a1a2e)
-    .setDescription(`🔄 **Generator is thinking...** <@${userId}> is generating a **${tier}** account.`);
-
-  const thinkingMsg = await interaction.channel.send({
-    embeds: [thinkingEmbed],
-  });
+  // Acknowledge the interaction immediately (ephemeral, invisible to the
+  // channel) since the DM flow below takes well over the 3s response window.
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const account = popAccount(tier);
   if (!account) {
-    await thinkingMsg.delete().catch(() => {});
-    return interaction.reply({
+    return interaction.editReply({
       content: "❌ Stock ran out while processing. Try again!",
-      flags: MessageFlags.Ephemeral,
     });
   }
 
@@ -91,13 +84,6 @@ export async function execute(interaction) {
 
   // Fetch custom banner image (falls back to default inside the embed builders)
   const bannerImageUrl = getBannerImageUrl(guildId);
-
-  // Dramatic countdown before handing over the account
-  const processingEmbed = new EmbedBuilder()
-    .setColor(0x1a1a2e)
-    .setDescription(`🔄 **Adding account to API...** (10s)`);
-  await thinkingMsg.edit({ embeds: [processingEmbed] }).catch(() => {});
-  await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // Build DM embed + buttons
   const dmEmbed = buildAccountDMEmbed(account, bannerImageUrl);
@@ -118,7 +104,7 @@ export async function execute(interaction) {
       .setURL("https://discord.com/channels/@me")
   );
 
-  // DM the user
+  // DM the user — all temp/progress messages live only in the DM.
   let tempMsg = null;
   try {
     console.log("Starting DM creation...");
@@ -131,6 +117,13 @@ export async function execute(interaction) {
     } catch (e) {
       console.error("Temp message failed:", e.message);
       // temp message failed — continue anyway
+    }
+
+    // Give the "Adding account to API" message a moment to be seen, then
+    // clean it up before delivering the real account embed.
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    if (tempMsg) {
+      await tempMsg.delete().catch(() => {});
     }
 
     console.log("Sending real account embed...");
@@ -147,22 +140,19 @@ export async function execute(interaction) {
         });
       }
     });
-
-    // Non-critical cleanup — wait a bit then remove the temp "Adding account" message
-    if (tempMsg) {
-      setTimeout(() => tempMsg.delete().catch(() => {}), 10_000);
-    }
   } catch (err) {
     console.error("Full DM error:", err.message, err.code, err);
-    await thinkingMsg.delete().catch(() => {});
-    return interaction.reply({
+    return interaction.editReply({
       content:
         "❌ I couldn't DM you! Please enable DMs from server members in your privacy settings.",
-      flags: MessageFlags.Ephemeral,
     });
   }
 
-  // Turn the public "thinking" message into the final clean public embed —
+  // Clean up the ephemeral deferred reply — the user already sees the DM,
+  // so no visible confirmation is needed in the channel.
+  await interaction.deleteReply().catch(() => {});
+
+  // DM succeeded — post the account-generated log embed to the gen channel.
   // minimal info only: who generated a what-tier account. Detailed info stays DM-only.
   const publicEmbed = buildPublicGenEmbed(
     userId,
@@ -170,19 +160,12 @@ export async function execute(interaction) {
     "DOKKAEBI",
     bannerImageUrl
   );
-  await thinkingMsg.edit({ embeds: [publicEmbed] }).catch(() => {});
 
-  await interaction.reply({
-    content: `✅ **Account Generated!** Check your DMs for the account details.`,
-    flags: MessageFlags.Ephemeral,
-  });
-
-  // Optionally, also post the same public embed to a dedicated log channel
   const logChannelId = settings.gen_channel_id;
   if (logChannelId) {
     try {
       const logChannel = await interaction.guild.channels.fetch(logChannelId);
-      if (logChannel && logChannel.id !== interaction.channelId) {
+      if (logChannel) {
         await logChannel.send({ embeds: [publicEmbed] });
       }
     } catch {
