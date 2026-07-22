@@ -117,7 +117,7 @@ try {
 
       // Small delay between requests to avoid overwhelming the API
       if (i < commands.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
 
