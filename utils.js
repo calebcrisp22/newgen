@@ -19,62 +19,65 @@ export function buildPublicGenEmbed(userId, tier = "free", operatorName = "DOKKA
 }
 
 export function buildAccountDMEmbed(account, imageUrl = null) {
+  // Parse account data
   const platforms = account.linked_platforms
     ? parsePlatformEmojis(JSON.parse(account.linked_platforms))
     : "None";
 
-  const blackIces = account.black_ices
-    ? JSON.parse(account.black_ices)
-    : [];
+  const blackIces = account.black_ices ? JSON.parse(account.black_ices) : [];
   const elites = account.elites ? JSON.parse(account.elites) : [];
-  const universals = account.universals
-    ? JSON.parse(account.universals)
-    : [];
-  const rankedHistory = account.ranked_history
-    ? JSON.parse(account.ranked_history)
-    : [];
+  const universals = account.universals ? JSON.parse(account.universals) : [];
+  const rankedHistory = account.ranked_history ? JSON.parse(account.ranked_history) : [];
 
   const embed = new EmbedBuilder()
-    .setColor(0x1a1a2e)
-    .setTitle(
-      `Generated Account${account.username ? ` - ${account.username}` : ""}`
-    )
+    .setColor(0xFF6B35) // Warm orange for R6
+    .setTitle(`✨ Generated R6 Account${account.username ? ` - ${account.username}` : ""}✨`)
     .setThumbnail(imageUrl || DEFAULT_BANNER_IMAGE_URL);
 
-  if (account.username)
-    embed.addFields({ name: "👤 Username", value: account.username, inline: true });
-  if (account.level)
-    embed.addFields({ name: "🎖️ Level", value: `${account.level}`, inline: true });
-  if (account.linked_platforms)
-    embed.addFields({ name: "🖥️ Platforms", value: platforms, inline: true });
+  // Stats summary line at the top
+  const statsLine = [
+    `📊 Level: ${account.level || "N/A"}`,
+    `🎮 Items: ${blackIces.length + elites.length + universals.length}`,
+    `🔐 2FA: ${account.two_fa_enabled ? "Yes" : "No"}`,
+    `⛔ Banned: ${account.is_banned ? "Yes" : "No"}`,
+    `🏅 Renown: ${account.renown ? account.renown.toLocaleString() : "0"}`,
+    `💳 Credits: ${account.r6credits ? account.r6credits.toLocaleString() : "0"}`,
+  ].join(" | ");
 
-  if (account.renown || account.r6credits) {
-    const currency = [
-      account.renown ? `🏅 ${account.renown.toLocaleString()}` : null,
-      account.r6credits ? `<:r6c:> ${account.r6credits.toLocaleString()}` : null,
-    ]
-      .filter(Boolean)
-      .join("  ");
-    embed.addFields({ name: "💰 Currency", value: currency });
+  embed.addFields({ name: "📈 Account Stats", value: statsLine });
+
+  // Platforms
+  if (account.linked_platforms) {
+    embed.addFields({ name: "🌐 Linked Platforms", value: platforms, inline: true });
   }
 
-  // Inventory section
+  // Last played
+  if (account.last_played) {
+    embed.addFields({ name: "📅 Last Played", value: account.last_played, inline: true });
+  }
+
+  // Ranked ranks if available
+  if (rankedHistory.length > 0) {
+    const ranksText = rankedHistory.join(", ");
+    embed.addFields({ name: "🏆 Ranked Ranks", value: ranksText || "None" });
+  }
+
+  // Inventory breakdown
   const invLines = [];
   if (blackIces.length > 0)
     invLines.push(`🟢 **Black Ices (${blackIces.length}):** ${blackIces.join(", ")}`);
   if (elites.length > 0)
-    invLines.push(`😺 **Elites (${elites.length}):** ${elites.join(", ")}`);
+    invLines.push(`👑 **Elites (${elites.length}):** ${elites.join(", ")}`);
   if (universals.length > 0)
     invLines.push(`🔶 **Universals (${universals.length}):** ${universals.join(", ")}`);
-  if (rankedHistory.length > 0)
-    invLines.push(
-      `🏆 **Ranked History (${rankedHistory.length}):** ${rankedHistory.join(", ")}`
-    );
 
   if (invLines.length > 0) {
-    embed.addFields({ name: "📦 Inventory", value: invLines.join("\n") });
+    embed.addFields({ name: "📦 Special Items", value: invLines.join("\n") });
+  } else {
+    embed.addFields({ name: "📦 Special Items", value: "None" });
   }
 
+  // Credentials (always last before image)
   embed.addFields({
     name: "🔑 Login Credentials",
     value: `\`\`\`${account.credentials}\`\`\``,
@@ -82,7 +85,7 @@ export function buildAccountDMEmbed(account, imageUrl = null) {
 
   if (account.skin_link) {
     embed.addFields({
-      name: "Skin Link:",
+      name: "🎨 Skin Link",
       value: account.skin_link,
     });
   }
