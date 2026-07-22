@@ -13,12 +13,12 @@ if (!DISCORD_BOT_TOKEN || !CLIENT_ID) {
   process.exit(1);
 }
 
-// Set a global timeout - if deployment takes longer than 45 seconds, something is wrong
+// Set a global timeout - if deployment takes longer than 90 seconds, something is wrong
 const deploymentTimeout = setTimeout(() => {
-  console.error("\n❌ Command deployment timed out after 45 seconds. Discord API is not responding.");
+  console.error("\n❌ Command deployment timed out after 90 seconds. Discord API is not responding.");
   console.error("This usually happens when Discord is rate-limiting or has connectivity issues.");
   process.exit(1);
-}, 45000);
+}, 90000);
 
 const commands = [];
 
@@ -103,7 +103,7 @@ try {
 
         const result = await withTimeout(
           rest.put(guildUrl, { body: [command] }),
-          5000,
+          10000,
           `rest.put(${guildUrl}) for /${command.name}`
         );
 
@@ -117,7 +117,7 @@ try {
 
       // Small delay between requests to avoid overwhelming the API
       if (i < commands.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 3500));
       }
     }
 
@@ -143,7 +143,7 @@ try {
     try {
       data = await withTimeout(
         rest.put(globalUrl, { body: commands }),
-        5000,
+        10000,
         `rest.put(${globalUrl})`
       );
       console.log(`⬅️  rest.put(applicationCommands) resolved.`);
