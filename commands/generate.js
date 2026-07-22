@@ -70,18 +70,13 @@ export async function execute(interaction) {
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  // Send a public "thinking" message to build anticipation in the channel
-  let loadingMessage = null;
-  try {
-    loadingMessage = await interaction.channel.send({
-      content: "🔄 Generator is thinking... Adding account to API",
-    });
-  } catch {
-    // Channel may be unavailable — silently skip
-  }
+  const thinkingMsg = await interaction.channel.send({
+    content: "🔄 Generator is thinking...",
+  });
 
   const account = popAccount(tier);
   if (!account) {
+    await thinkingMsg.delete().catch(() => {});
     return interaction.editReply({
       content: "❌ Stock ran out while processing. Try again!",
     });
@@ -89,6 +84,9 @@ export async function execute(interaction) {
 
   // Set cooldown
   setCooldown(userId, guildId, `generate_${tier}`, cooldownSecs);
+
+  // Remove the "thinking" message immediately — nothing else should be visible yet
+  await thinkingMsg.delete().catch(() => {});
 
   // Fetch custom banner image (falls back to default inside the embed builders)
   const bannerImageUrl = getBannerImageUrl(guildId);
@@ -115,6 +113,13 @@ export async function execute(interaction) {
   // DM the user
   try {
     const dm = await interaction.user.createDM();
+
+    const tempMsg = await dm.send({ content: "🔄 Adding account to API" });
+
+    await new Promise((resolve) => setTimeout(resolve, 10_000));
+
+    await tempMsg.delete().catch(() => {});
+
     const dmMsg = await dm.send({ embeds: [dmEmbed], components: [row] });
 
     // Collector for Copy button (5 min window)
@@ -137,17 +142,6 @@ export async function execute(interaction) {
   await interaction.editReply({
     content: "✅ **Account sent to your DMs!** Check your direct messages.",
   });
-
-  // Keep the public "thinking" message visible for a bit, then remove it
-  if (loadingMessage) {
-    setTimeout(async () => {
-      try {
-        await loadingMessage.delete();
-      } catch {
-        // Message may already be deleted or inaccessible — silently skip
-      }
-    }, 10000);
-  }
 
   // Post public log embed to gen channel
   const logChannelId = settings.gen_channel_id;
