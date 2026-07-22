@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, MessageFlags } from "discord.js";
-import { upsertSubscription, parseDurationSeconds } from "../db.js";
+import { upsertSubscription } from "../db.js";
 import { buildSubDMEmbed, parseDurationSeconds as parseDur, isAdmin } from "../utils.js";
 
 export const data = new SlashCommandBuilder()
