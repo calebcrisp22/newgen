@@ -109,15 +109,21 @@ export async function execute(interaction) {
   // DM the user
   let tempMsg = null;
   try {
+    console.log("Starting DM creation...");
     const dm = await interaction.user.createDM();
+    console.log("DM channel created, sending temp message...");
 
     try {
       tempMsg = await dm.send({ content: "🔄 Adding account to API" });
+      console.log("Temp message sent");
     } catch (e) {
+      console.error("Temp message failed:", e.message);
       // temp message failed — continue anyway
     }
 
+    console.log("Sending real account embed...");
     const dmMsg = await dm.send({ embeds: [dmEmbed], components: [row] });
+    console.log("Account embed sent successfully!");
 
     // Collector for Copy button (5 min window)
     const collector = dmMsg.createMessageComponentCollector({ time: 300_000 });
@@ -135,7 +141,7 @@ export async function execute(interaction) {
       setTimeout(() => tempMsg.delete().catch(() => {}), 10_000);
     }
   } catch (err) {
-    console.error("Error in /generate DM sending:", err);
+    console.error("Full DM error:", err.message, err.code, err);
     await thinkingMsg.delete().catch(() => {});
     return interaction.reply({
       content:
