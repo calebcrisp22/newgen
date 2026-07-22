@@ -5,7 +5,7 @@ import { EmbedBuilder } from "discord.js";
 const DEFAULT_BANNER_IMAGE_URL =
   "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg";
 
-export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI", imageUrl = null, account = null) {
+export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI", imageUrl = null) {
   const embed = new EmbedBuilder()
     .setColor(0x1a1a2e)
     .setTitle("<:r6:> Account Generated")
@@ -13,57 +13,6 @@ export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI", imageUr
     .setImage(imageUrl || DEFAULT_BANNER_IMAGE_URL)
     .setFooter({ text: `${operatorName}⭐` })
     .setTimestamp();
-
-  if (!account) return embed;
-
-  const platforms = account.linked_platforms
-    ? parsePlatformEmojis(JSON.parse(account.linked_platforms))
-    : "None";
-
-  const blackIces = account.black_ices
-    ? JSON.parse(account.black_ices)
-    : [];
-  const elites = account.elites ? JSON.parse(account.elites) : [];
-  const universals = account.universals
-    ? JSON.parse(account.universals)
-    : [];
-  const rankedHistory = account.ranked_history
-    ? JSON.parse(account.ranked_history)
-    : [];
-
-  if (account.username)
-    embed.addFields({ name: "Username ➡️", value: account.username, inline: true });
-  if (account.level)
-    embed.addFields({ name: "Level ➡️", value: `${account.level}`, inline: true });
-  if (account.linked_platforms)
-    embed.addFields({ name: "Linked Platforms ➡️", value: platforms, inline: true });
-
-  if (account.renown || account.r6credits) {
-    const currency = [
-      account.renown ? `🏅 ${account.renown.toLocaleString()}` : null,
-      account.r6credits ? `<:r6c:> ${account.r6credits.toLocaleString()}` : null,
-    ]
-      .filter(Boolean)
-      .join("  ");
-    embed.addFields({ name: "Currency ➡️", value: currency });
-  }
-
-  // Inventory section
-  const invLines = [];
-  if (blackIces.length > 0)
-    invLines.push(`🟢 **Black Ices (${blackIces.length}):** ${blackIces.join(", ")}`);
-  if (elites.length > 0)
-    invLines.push(`😺 **Elites (${elites.length}):** ${elites.join(", ")}`);
-  if (universals.length > 0)
-    invLines.push(`🔶 **Universals (${universals.length}):** ${universals.join(", ")}`);
-  if (rankedHistory.length > 0)
-    invLines.push(
-      `🏆 **Ranked History (${rankedHistory.length}):** ${rankedHistory.join(", ")}`
-    );
-
-  if (invLines.length > 0) {
-    embed.addFields({ name: "🎮 Inventory:", value: invLines.join("\n") });
-  }
 
   return embed;
 }

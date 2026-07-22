@@ -173,8 +173,7 @@ export async function execute(interaction) {
         const publicEmbed = buildPublicGenEmbed(
           userId,
           "DOKKAEBI",
-          bannerImageUrl,
-          account
+          bannerImageUrl
         );
         await logChannel.send({ embeds: [publicEmbed] });
       }
