@@ -102,7 +102,7 @@ export async function execute(interaction) {
       ),
     new ButtonBuilder()
       .setLabel("Upgrade Premium ↗")
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Link)
       .setURL("https://discord.com/channels/@me")
   );
 
