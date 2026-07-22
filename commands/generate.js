@@ -87,6 +87,12 @@ export async function execute(interaction) {
   // Fetch custom banner image (falls back to default inside the embed builders)
   const bannerImageUrl = getBannerImageUrl(guildId);
 
+  // Dramatic countdown before handing over the account
+  await thinkingMsg
+    .edit({ content: "🔄 Adding account to API (10s...)" })
+    .catch(() => {});
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
   // Build DM embed + buttons
   const dmEmbed = buildAccountDMEmbed(account, bannerImageUrl);
   const row = new ActionRowBuilder().addComponents(
@@ -164,7 +170,12 @@ export async function execute(interaction) {
     try {
       const logChannel = await interaction.guild.channels.fetch(logChannelId);
       if (logChannel) {
-        const publicEmbed = buildPublicGenEmbed(userId, "DOKKAEBI", bannerImageUrl);
+        const publicEmbed = buildPublicGenEmbed(
+          userId,
+          "DOKKAEBI",
+          bannerImageUrl,
+          account
+        );
         await logChannel.send({ embeds: [publicEmbed] });
       }
     } catch {
