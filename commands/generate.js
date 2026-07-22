@@ -96,7 +96,7 @@ export async function execute(interaction) {
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setLabel("❓ How to Link")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Link)
       .setURL(
         "https://www.ubisoft.com/en-us/help/rainbow-six-siege/article/linking-your-ubisoft-account/000025311"
       ),
