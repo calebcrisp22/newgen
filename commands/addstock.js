@@ -5,9 +5,34 @@ import {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  EmbedBuilder,
 } from "discord.js";
 import { addAccount, getStockCount } from "../db.js";
 import { isAdmin, parseAccountInput } from "../utils.js";
+
+function buildStockUpdateEmbed({ added, failed, tier, after }) {
+  const embed = new EmbedBuilder()
+    .setColor(0x00ff00)
+    .setTitle("✅ Stock Updated!")
+    .addFields(
+      { name: "Added", value: `${added} account(s) to **${tier}**`, inline: true },
+      { name: "New total", value: `${after} accounts`, inline: true }
+    )
+    .setTimestamp();
+
+  if (failed.length > 0) {
+    embed.addFields({ name: "Failed", value: `${failed.length} line(s)`, inline: true });
+    embed.addFields({
+      name: "Failed samples",
+      value: failed
+        .slice(0, 5)
+        .map((f) => `• \`${f}\``)
+        .join("\n"),
+    });
+  }
+
+  return embed;
+}
 
 export const data = new SlashCommandBuilder()
   .setName("addstock")
@@ -73,15 +98,9 @@ export async function execute(interaction) {
 
     const after = getStockCount(tier);
 
-    let msg = `✅ Added **${added}** account(s) to **${tier}** stock. Total: **${after}**`;
-    if (failed.length > 0) {
-      msg += `\n\n❌ Failed to parse **${failed.length}** line(s):\n${failed
-        .slice(0, 5)
-        .map((f) => `• \`${f}\``)
-        .join("\n")}`;
-    }
+    const embed = buildStockUpdateEmbed({ added, failed, tier, after });
 
-    return interaction.editReply({ content: msg });
+    return interaction.editReply({ embeds: [embed] });
   }
 
   const modal = new ModalBuilder()
@@ -126,13 +145,7 @@ export async function execute(interaction) {
 
   const after = getStockCount(tier);
 
-  let msg = `✅ Added **${added}** account(s) to **${tier}** stock. Total: **${after}**`;
-  if (failed.length > 0) {
-    msg += `\n\n❌ Failed to parse **${failed.length}** line(s):\n${failed
-      .slice(0, 5)
-      .map((f) => `• \`${f}\``)
-      .join("\n")}`;
-  }
+  const embed = buildStockUpdateEmbed({ added, failed, tier, after });
 
-  await submitted.reply({ content: msg, flags: MessageFlags.Ephemeral });
+  await submitted.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }

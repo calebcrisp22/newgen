@@ -113,14 +113,11 @@ export async function execute(interaction) {
   );
 
   // DM the user
+  let tempMsg;
   try {
     const dm = await interaction.user.createDM();
 
-    const tempMsg = await dm.send({ content: "🔄 Adding account to API" });
-
-    await new Promise((resolve) => setTimeout(resolve, 10_000));
-
-    await tempMsg.delete().catch(() => {});
+    tempMsg = await dm.send({ content: "🔄 Adding account to API" });
 
     const dmMsg = await dm.send({ embeds: [dmEmbed], components: [row] });
 
@@ -142,6 +139,10 @@ export async function execute(interaction) {
       flags: MessageFlags.Ephemeral,
     });
   }
+
+  // Non-critical cleanup — wait a bit then remove the temp "Adding account" message
+  await new Promise((resolve) => setTimeout(resolve, 10_000));
+  await tempMsg?.delete().catch(() => {});
 
   await interaction.editReply({
     content: `✅ **Account Generated!** <@${userId}> just generated a **${tier}** account.`,
