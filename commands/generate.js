@@ -69,8 +69,9 @@ export async function execute(interaction) {
     });
   }
 
-  // Acknowledge the interaction silently — no visible response to the user.
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  // Acknowledge the interaction publicly — the "thinking..." state must be
+  // visible to everyone in the channel, not just the user who ran the command.
+  await interaction.deferReply();
 
   // Show Discord's native typing indicator instead of a public embed.
   await interaction.channel.sendTyping();
@@ -174,6 +175,6 @@ export async function execute(interaction) {
     await interaction.channel.send({ embeds: [publicEmbed] }).catch(() => {});
   }
 
-  // Silently finish the deferred ephemeral acknowledgment — no visible reply.
+  // Clean up the public "thinking..." acknowledgment now that processing is done.
   await interaction.deleteReply().catch(() => {});
 }
