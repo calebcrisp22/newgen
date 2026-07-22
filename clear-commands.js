@@ -39,7 +39,7 @@ try {
     try {
       await withTimeout(
         rest.put(guildUrl, { body: [] }),
-        5000,
+        10000,
         `rest.put(${guildUrl})`
       );
       console.log(`✅ Cleared guild commands for ${GUILD_ID}`);
@@ -56,7 +56,7 @@ try {
   try {
     await withTimeout(
       rest.put(globalUrl, { body: [] }),
-      5000,
+      10000,
       `rest.put(${globalUrl})`
     );
     console.log("✅ Cleared global commands");
