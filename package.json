@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node clear-commands.js && node deploy-commands.js && node index.js",
+    "start": "node clear-commands.js && node index.js",
     "clear": "node clear-commands.js",
     "deploy": "node clear-commands.js && node deploy-commands.js"
   },
