@@ -2,19 +2,20 @@ import { EmbedBuilder } from "discord.js";
 
 // ── Embed Builders ────────────────────────────────────────────────────────────
 
-export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI") {
+const DEFAULT_BANNER_IMAGE_URL =
+  "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg";
+
+export function buildPublicGenEmbed(username, operatorName = "DOKKAEBI", imageUrl = null) {
   return new EmbedBuilder()
     .setColor(0x1a1a2e)
     .setTitle("<:r6:> Account Generated")
     .setDescription(`<@${username}> generated an account!`)
-    .setImage(
-      "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg"
-    )
+    .setImage(imageUrl || DEFAULT_BANNER_IMAGE_URL)
     .setFooter({ text: `${operatorName}⭐` })
     .setTimestamp();
 }
 
-export function buildAccountDMEmbed(account) {
+export function buildAccountDMEmbed(account, imageUrl = null) {
   const platforms = account.linked_platforms
     ? parsePlatformEmojis(JSON.parse(account.linked_platforms))
     : "None";
@@ -35,9 +36,7 @@ export function buildAccountDMEmbed(account) {
     .setTitle(
       `Generated Account${account.username ? ` - ${account.username}` : ""}`
     )
-    .setThumbnail(
-      "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg"
-    );
+    .setThumbnail(imageUrl || DEFAULT_BANNER_IMAGE_URL);
 
   if (account.username)
     embed.addFields({ name: "Username ➡️", value: account.username, inline: true });
@@ -85,9 +84,7 @@ export function buildAccountDMEmbed(account) {
     });
   }
 
-  embed.setImage(
-    "https://staticctf.ubisoft.com/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUDkj/3lYBT5X9KtGMcZHMvHGfA6/cf2c5e07ef4bc8abd1e5c49c0c7f0f38/r6s-operators-dokkaebi.jpg"
-  );
+  embed.setImage(imageUrl || DEFAULT_BANNER_IMAGE_URL);
 
   return embed;
 }

@@ -12,6 +12,7 @@ import {
   setCooldown,
   getSettings,
   hasActiveSub,
+  getBannerImageUrl,
 } from "../db.js";
 import { buildPublicGenEmbed, buildAccountDMEmbed } from "../utils.js";
 
@@ -79,8 +80,11 @@ export async function execute(interaction) {
   // Set cooldown
   setCooldown(userId, guildId, `generate_${tier}`, cooldownSecs);
 
+  // Fetch custom banner image (falls back to default inside the embed builders)
+  const bannerImageUrl = getBannerImageUrl(guildId);
+
   // Build DM embed + buttons
-  const dmEmbed = buildAccountDMEmbed(account);
+  const dmEmbed = buildAccountDMEmbed(account, bannerImageUrl);
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`copy_creds_${account.id}`)
@@ -130,7 +134,7 @@ export async function execute(interaction) {
     try {
       const logChannel = await interaction.guild.channels.fetch(logChannelId);
       if (logChannel) {
-        const publicEmbed = buildPublicGenEmbed(userId);
+        const publicEmbed = buildPublicGenEmbed(userId, "DOKKAEBI", bannerImageUrl);
         await logChannel.send({ embeds: [publicEmbed] });
       }
     } catch {
